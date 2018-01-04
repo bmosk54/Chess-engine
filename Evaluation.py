@@ -1,7 +1,13 @@
 import chess
 import chess.polyglot
 import random
+import chess.svg
 
+from IPython.display import SVG
+
+board = chess.Board("8/8/8/8/4N3/8/8/8 w - - 0 1")
+squares = board.attacks(chess.E4)
+SVG(chess.svg.board(board=board, squares=squares)) 
 board = chess.Board()
 move_list = []
 gameOver = False
@@ -172,29 +178,10 @@ values['k']=[-30,-40,-40,-50,-50,-40,-40,-30,
 
 
 cmap = board.piece_map()
-'''print(cmap)
-print (str(board))
-print (chess.SQUARES)'''
 score = 0
 piece_scores = {'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q':0, 'K': 0, 'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q':0, 'k': 0}
 turn = 0
 
-for piece in Pieces:
-	for square in chess.SQUARES:
-		if square in cmap:
-			print (cmap[square].symbol())
-			if cmap[square].symbol() == piece:
-				score += values[piece][square]
-				score += Pieces[piece]
-				piece_scores[piece] += Pieces[piece] + values[piece][square]
-			else:
-				pass
-
-material_score = (piece_scores['K'] - piece_scores['k']
-+ piece_scores['Q'] - piece_scores['q']
-+ piece_scores['R'] - piece_scores['r']
-+ piece_scores['B'] + piece_scores['N'] - piece_scores['b'] - piece_scores['n']
-+ piece_scores['P'] - piece_scores['p']) 
 #- .3 * (wD * wI - bD * bI)
 #+ .1 * (wM - bM)
 
@@ -208,37 +195,62 @@ print (piece_scores['P'])
 #pop moves after pushed
 def minimax(position, depth):
 	global turn
+	global material_score
 	if depth == 0 or board.is_checkmate():
 		return (material_score, None)
 	else:
-		if turn % 2 == 0: #White's turn
-			best_score = -999999
-			best_move = None
-			for move in board.legal_moves:
-				new_pos = board.push(move)
-				score, move = minimax(new_pos, depth - 1)
-				board.pop()
-				if score > best_score:  #white maximizes score
-					best_score = score
-					best_move = move
-			return(best_score, best_move)
-		else:
+		if (depth % 2 == 0): #White's turn
 			best_score = 999999
 			best_move = None
 			for move in board.legal_moves:
 				new_pos = board.push(move)
-				score, move = minimax(new_pos, depth - 1)
+				material_score, move = minimax(new_pos, depth - 1)
 				board.pop()
-				if score < best_score:  #black minimizes score
+				if material_score < best_score:  #white minimizes score
 					best_score = score
 					best_move = move
 			return(best_score, best_move)
+		else:
+			best_score = -999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				#print(board)
+				material_score, move = minimax(new_pos, depth - 1)
+				#print("%s is the material score" %material_score)
+				#print("%s move" %move)
+				board.pop()
+				if material_score > best_score:  #black maximizes score
+					best_score = material_score
+					best_move = move
+					#print (best_move)
+			return(best_score, best_move)
+			print(best_move)
+			print ("here")
 
 # main loop
 			
 read_move_list()
 while not gameOver:
+	for piece in Pieces:
+		for square in chess.SQUARES:
+			if square in cmap:
+				#print (cmap[square].symbol())
+				if cmap[square].symbol() == piece:
+					score += values[piece][square]
+					score += Pieces[piece]
+					piece_scores[piece] += Pieces[piece] + values[piece][square]
+				else:
+					pass
+
+	material_score = (piece_scores['K'] - piece_scores['k']
+	+ piece_scores['Q'] - piece_scores['q']
+	+ piece_scores['R'] - piece_scores['r']
+	+ piece_scores['B'] + piece_scores['N'] - piece_scores['b'] - piece_scores['n']
+	+ piece_scores['P'] - piece_scores['p']) 
+	print (board)
 	if turn % 2 == 0 and len(move_list) > 0:
+		print (material_score)
 		valid = False	
 		while valid == False: 
 			try:
@@ -250,8 +262,9 @@ while not gameOver:
 	elif not turn % 2 ==0 and len(move_list) > 0:
 		read_move_list()
 		choose_move_open()
-		print(board)
 	else:
 		print("out of opening")
-		minimax(board, 3)	
-	turn += 1
+		score, move = minimax(board, 3)	
+		board.push(best_move)
+	turn +=1
+	material_score = 0
