@@ -171,30 +171,29 @@ values['k']=[-30,-40,-40,-50,-50,-40,-40,-30,
 	20, 30, 10,  0,  0, 10, 30, 20]
 
 
-cmap = board.piece_map()
-'''print(cmap)
-print (str(board))
-print (chess.SQUARES)'''
-score = 0
-piece_scores = {'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q':0, 'K': 0, 'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q':0, 'k': 0}
+def score_board(board):
+	cmap = board.piece_map()
+	score = 0
+	piece_scores = {'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q':0, 'K': 0, 'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q':0, 'k': 0}
+	for piece in Pieces:
+		for square in chess.SQUARES:
+			if square in cmap:
+				#print (cmap[square].symbol())
+				if cmap[square].symbol() == piece:
+					score += values[piece][square]
+					score += Pieces[piece]
+					piece_scores[piece] += Pieces[piece] + values[piece][square]
+				else:
+					pass
+	material_score = (piece_scores['K'] - piece_scores['k']
+	+ piece_scores['Q'] - piece_scores['q']
+	+ piece_scores['R'] - piece_scores['r']
+	+ piece_scores['B'] + piece_scores['N'] - piece_scores['b'] - piece_scores['n']
+	+ piece_scores['P'] - piece_scores['p']) 
+	return material_score
+
 turn = 0
 
-for piece in Pieces:
-	for square in chess.SQUARES:
-		if square in cmap:
-			print (cmap[square].symbol())
-			if cmap[square].symbol() == piece:
-				score += values[piece][square]
-				score += Pieces[piece]
-				piece_scores[piece] += Pieces[piece] + values[piece][square]
-			else:
-				pass
-
-material_score = (piece_scores['K'] - piece_scores['k']
-+ piece_scores['Q'] - piece_scores['q']
-+ piece_scores['R'] - piece_scores['r']
-+ piece_scores['B'] + piece_scores['N'] - piece_scores['b'] - piece_scores['n']
-+ piece_scores['P'] - piece_scores['p']) 
 #- .3 * (wD * wI - bD * bI)
 #+ .1 * (wM - bM)
 
@@ -204,41 +203,87 @@ print (board)
 print (piece_scores['P'])
 '''
 
-### Minimax search algorithm ###
-#pop moves after pushed
-def minimax(position, depth):
+def minimax_root(position, depth):
 	global turn
+	global material_score
 	if depth == 0 or board.is_checkmate():
-		return (material_score, None)
+		return score_board(board), current_move
 	else:
-		if turn % 2 == 0: #White's turn
-			best_score = -999999
-			best_move = None
-			for move in board.legal_moves:
-				new_pos = board.push(move)
-				score, move = minimax(new_pos, depth - 1)
-				board.pop()
-				if score > best_score:  #white maximizes score
-					best_score = score
-					best_move = move
-			return(best_score, best_move)
-		else:
+		if (depth % 2 == 0): #White's turn
 			best_score = 999999
 			best_move = None
 			for move in board.legal_moves:
 				new_pos = board.push(move)
-				score, move = minimax(new_pos, depth - 1)
+				material_score, testmove = minimax(new_pos, depth - 1, move)
 				board.pop()
-				if score < best_score:  #black minimizes score
-					best_score = score
-					best_move = move
+				if (material_score < best_score):  #white minimizes score
+					best_score = material_score
+					best_move = testmove
+			return(best_score, best_move)
+		else:
+			best_score = -999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				#print(board)
+				material_score, testmove = minimax(new_pos, depth - 1, move)
+				#print("%s is the material score" %material_score)
+				#print("%s move" %move)
+				board.pop()
+				if (material_score > best_score):  #black maximizes score
+					best_score = material_score
+					best_move = testmove
+					#print (best_move)
+			#print(best_move)
+			#print("here")
+			return(best_score, best_move)
+
+
+### Minimax search algorithm ###
+
+def minimax(position, depth, current_move):
+	global turn
+	global material_score
+	if depth == 0 or board.is_checkmate():
+		return score_board(board), current_move
+	else:
+		if (depth % 2 == 0): #White's turn
+			best_score = 999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				material_score, testmove = minimax(new_pos, depth - 1, current_move)
+				board.pop()
+				if (material_score < best_score):  #white minimizes score
+					best_score = material_score
+					best_move = testmove
+			return(best_score, best_move)
+		else:
+			best_score = -999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				#print(board)
+				material_score, testmove = minimax(new_pos, depth - 1, current_move)
+				#print("%s is the material score" %material_score)
+				#print("%s move" %move)
+				board.pop()
+				if (material_score > best_score):  #black maximizes score
+					best_score = material_score
+					best_move = testmove
+					#print (best_move)
+			#print(best_move)
+			#print("here")
 			return(best_score, best_move)
 
 # main loop
 			
 read_move_list()
 while not gameOver:
+	material_score = score_board(board)
+	print (board)
 	if turn % 2 == 0 and len(move_list) > 0:
+		print (material_score/100)
 		valid = False	
 		while valid == False: 
 			try:
@@ -250,8 +295,22 @@ while not gameOver:
 	elif not turn % 2 ==0 and len(move_list) > 0:
 		read_move_list()
 		choose_move_open()
-		print(board)
-	else:
-		print("out of opening")
-		minimax(board, 3)	
+	elif turn % 2 == 0 and len(move_list) == 0:
+		print (turn)
+		score, move = minimax_root(board, 3)	
+		board.push(move)
+	elif not turn % 2 == 0 and len(move_list) == 0:
+		print (material_score/100)
+		valid = False	
+		while valid == False: 
+			try:
+				user_move = input()
+				board.push_san(user_move)
+				valid = True
+			except ValueError:
+				print("Illegal move!")
+	elif board.is_checkmate() or board.is_stalemate():
+		print ("The game is over")
+		gameOver = True
 	turn += 1
+	material_score = 0
