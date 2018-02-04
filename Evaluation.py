@@ -296,8 +296,8 @@ while not gameOver:
 		read_move_list()
 		choose_move_open()
 	elif turn % 2 == 0 and len(move_list) == 0:
-		print (turn)
-		score, move = minimax_root(board, 3)	
+		print (material_score/100)
+		score, move = minimax_root(board, 2)	
 		board.push(move)
 	elif not turn % 2 == 0 and len(move_list) == 0:
 		print (material_score/100)
@@ -315,3 +315,4 @@ while not gameOver:
 	
 	turn += 1
 	material_score = 0
+
