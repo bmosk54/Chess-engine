@@ -282,6 +282,14 @@ read_move_list()
 while not gameOver:
 	material_score = score_board(board)
 	print (board)
+
+	if board.is_checkmate() or board.is_stalemate():
+		if board.is_checkmate():
+			print ("Checkmate!")
+		if board.is_stalemate():
+			print ("Stalemate")
+		gameOver = True
+		exit()
 	if turn % 2 == 0 and len(move_list) > 0:
 		print (material_score/100)
 		valid = False	
@@ -299,6 +307,7 @@ while not gameOver:
 		print (material_score/100)
 		score, move = minimax_root(board, 2)	
 		board.push(move)
+		print (move)
 	elif not turn % 2 == 0 and len(move_list) == 0:
 		print (material_score/100)
 		valid = False	
@@ -309,9 +318,7 @@ while not gameOver:
 				valid = True
 			except ValueError:
 				print("Illegal move!")
-	elif board.is_checkmate() or board.is_stalemate():
-		print ("The game is over")
-		gameOver = True
+
 	
 	turn += 1
 	material_score = 0
