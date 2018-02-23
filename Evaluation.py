@@ -279,6 +279,7 @@ def minimax(position, depth, current_move):
 # main loop
 			
 read_move_list()
+user_move = "u"
 while not gameOver:
 	material_score = score_board(board)
 	print (board)
@@ -293,6 +294,23 @@ while not gameOver:
 	if turn % 2 == 0 and len(move_list) > 0:
 		print (material_score/100)
 		valid = False	
+		while valid == False: 
+			while user_move in ["u", "h"]:		
+				try:
+					user_move = input("Enter your move (or h for help, u for undo): ")
+					if (user_move == "u"):
+						board.pop()
+						print (board)
+					elif (user_move == "h"):
+						print("To castle kingside: O-O")
+						print("To castle queenside: O-O-O")
+						print("Specify square (rank or file) if 2 of same piece can  move to square. Ex: Rfe1")
+					else:
+						board.push_san(user_move)
+				except ValueError:
+					print("Illegal move!")
+			user_move = "u"
+			valid = True
 		while valid == False: 
 			try:
 				user_move = input()
@@ -312,14 +330,22 @@ while not gameOver:
 		print (material_score/100)
 		valid = False	
 		while valid == False: 
-			try:
-				user_move = input()
-				board.push_san(user_move)
-				valid = True
-			except ValueError:
-				print("Illegal move!")
-
+			while user_move in ["u", "h"]:		
+				try:
+					user_move = input("Enter your move (or h for help, u for undo): ")
+					if (user_move == "u"):
+						board.pop()
+						print (board)
+					elif (user_move == "h"):
+						print("To castle kingside: O-O")
+						print("To castle queenside: O-O-O")
+						print("Specify square (rank or file) if 2 of same piece can  move to square. Ex: Rfe1")
+					else:
+						board.push_san(user_move)
+				except ValueError:
+					print("Illegal move!")
+			user_move = "u"
+			valid = True
 	
 	turn += 1
 	material_score = 0
-
