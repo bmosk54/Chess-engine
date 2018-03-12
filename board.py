@@ -138,20 +138,6 @@ def drawBoard(board):
 
 	pygame.display.update()
 
-def move_from():
-	for square in squares:
-		clear = (0,0,0)
-		square = pygame.draw.rect(chessboard,clear,square)
-		x,y = pygame.mouse.get_pos()
-		square_x, square_y = square[0], square[1]
-		if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
-			for k,v in squareMap.items():
-				if square == v:
-					if piece_at(dictionary[k]) != None:
-						piece_from = k
-						print (piece_from)
-					return k
-
 def moves():    
 	global pieces
 	global squares
