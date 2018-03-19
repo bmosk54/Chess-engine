@@ -44,6 +44,9 @@ black_queen = pygame.transform.scale(black_queen, (img_x+8,img_y-2))
 black_king = pygame.image.load(os.path.join('Black_king.png'))
 black_king = pygame.transform.scale(black_king, (img_x+8,img_y+3))
 
+pieceMap = {'P': white_pawns, 'B': white_bishops, 'N': white_knights, 'R': white_rooks, 'Q': white_queen, 'K': white_king,\
+'p': black_pawns, 'b': black_bishops, 'n': black_knights, 'r': black_rooks, 'q': black_queen, 'k': black_king}
+
 pieces = [white_pawns,white_rooks,white_knights,white_bishops,white_queen,white_king,\
 black_pawns,black_knights,black_bishops,black_queen,black_king,black_rooks]
 
@@ -138,6 +141,19 @@ def drawBoard(board):
 
 	pygame.display.update()
 
+def hover():
+	x,y = pygame.mouse.get_pos()
+	for square in squares:
+		clear = (0,0,0)
+		square = pygame.draw.rect(chessboard,clear,square)
+		square_x, square_y = square[0], square[1]
+		for k,v in squareMap.items():
+			if square == v:
+				for move in board.legal_moves:
+					if move.from_square == dictionary[k]:
+						if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
+							pygame.draw.rect(chessboard,hover_color,v)
+
 def moves():    
 	global pieces
 	global squares
@@ -151,8 +167,10 @@ def moves():
 		next(colors)
 
 	exit = False
-
+	val = None
+	colorMe = False
 	clicked = False
+	key = 0
 	while not exit:
 		ev = pygame.event.poll()
 		if ev.type == pygame.QUIT: 
@@ -167,16 +185,13 @@ def moves():
 					for k,v in squareMap.items():
 						if square == v:
 							if board.piece_at(dictionary[k]) != None:
-								for move in board.legal_moves:
-									if move.from_square == dictionary[k]:
-										print (other_dictionary[move.to_square])
-											
+								colorMe = True
+								key = k
+								val = v	
 								piece_from = k
 								clicked = True
 		elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and clicked:
 			for square in squares:
-				clear = (0,0,0)
-				square = pygame.draw.rect(chessboard,clear,square)
 				x,y = pygame.mouse.get_pos()
 				square_x, square_y = square[0], square[1]
 				if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
@@ -188,10 +203,22 @@ def moves():
 							if board_move in board.legal_moves:
 								board.push(board_move)
 								drawBoard(board)
+								colorMe = False
 
 
 		main_surface.blit(chessboard, (100, 100))
 		main_surface.blit(moves_made, (625, 100))
 		drawBoard(board)
+		if colorMe:
+			pygame.draw.rect(chessboard,click_color,val)
+			for p, pic in pieceMap.items():
+				symbol = board.piece_at(dictionary[key])
+				myx = (dictionary[key] % 8) * 60
+				myy = (7 - dictionary[key]//8) * 60
+				point = (myx, myy, 60, 60)
+				if symbol.symbol() == p:
+					chessboard.blit(pic, (point))
+					hover()
+			#colorMe = False
 		clock.tick(30)
 moves()
