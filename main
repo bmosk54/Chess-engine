@@ -1,0 +1,681 @@
+import chess
+import chess.polyglot
+import random
+import pygame
+import itertools
+import os
+import chess
+#intitializing the board
+board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+square_size = 60
+width, height = 8*square_size, 8*square_size
+chessboard = pygame.Surface((width, height))
+move_list = []
+#initializing pygame window
+pygame.init() 
+clock = pygame.time.Clock()
+main_surface = pygame.display.set_mode((1000, 700))
+pygame.display.set_caption("Chess Engine")
+#color and font setup
+black = (0,0,0)
+white = (255,255,255)
+hover_color = (9,227,0)
+click_color = (11,105,35)
+surface_color = (100,149,237)
+main_surface.fill((54,69,79))
+font = pygame.font.SysFont("Comic Sans MS", 16, italic = True)
+#rect setup
+game_rect = ((900, 100), (80, 30))
+new_game = font.render("New game", True, black)
+flip_rect = ((900, 160), (80,30))
+flip_board = font.render("Flip board", True, black)
+undo_rect = ((900, 220), (80,30))
+undo_move = font.render("Undo move", True, black)
+moves_made = pygame.Surface((250,450))
+#board setup
+clicked = False
+tiles = []
+img_x, img_y = 48,58
+white_pawns = pygame.image.load(os.path.join('White_pawn.png'))
+white_pawns = pygame.transform.scale(white_pawns, (img_x,img_y))
+white_rooks = pygame.image.load(os.path.join('White_rook.png'))
+white_rooks = pygame.transform.scale(white_rooks, (img_x,img_y))
+white_knights = pygame.image.load(os.path.join('White_knight.png'))
+white_knights = pygame.transform.scale(white_knights, (img_x+8,img_y+2))
+white_bishops = pygame.image.load(os.path.join('White_bishop.png'))
+white_bishops = pygame.transform.scale(white_bishops, (img_x+10,img_y))
+white_queen = pygame.image.load(os.path.join('White_queen.png'))
+white_queen = pygame.transform.scale(white_queen, (img_x+8,img_y-2))
+white_king = pygame.image.load(os.path.join('White_king.png'))
+white_king = pygame.transform.scale(white_king, (img_x+8,img_y+3))
+black_pawns = pygame.image.load(os.path.join('Black_pawn.png'))
+black_pawns = pygame.transform.scale(black_pawns, (img_x+4,img_y+4))
+black_rooks = pygame.image.load(os.path.join('Black_rook.png'))
+black_rooks = pygame.transform.scale(black_rooks, (img_x+2,img_y))
+black_knights = pygame.image.load(os.path.join('Black_knight.png'))
+black_knights = pygame.transform.scale(black_knights, (img_x+8,img_y+2))
+black_bishops = pygame.image.load(os.path.join('Black_bishop.png'))
+black_bishops = pygame.transform.scale(black_bishops, (img_x+10,img_y))
+black_queen = pygame.image.load(os.path.join('Black_queen.png'))
+black_queen = pygame.transform.scale(black_queen, (img_x+8,img_y-2))
+black_king = pygame.image.load(os.path.join('Black_king.png'))
+black_king = pygame.transform.scale(black_king, (img_x+8,img_y+3))
+
+pieceMap = {'P': white_pawns, 'B': white_bishops, 'N': white_knights, 'R': white_rooks, 'Q': white_queen, 'K': white_king,\
+'p': black_pawns, 'b': black_bishops, 'n': black_knights, 'r': black_rooks, 'q': black_queen, 'k': black_king}
+
+pieces = [white_pawns,white_rooks,white_knights,white_bishops,white_queen,white_king,\
+black_pawns,black_knights,black_bishops,black_queen,black_king,black_rooks]
+
+a8, a7, a6, a5, a4, a3, a2, a1, b8, b7, b6, b5, b4, b3, b2, b1, c8, c7, c6, c5, c4, c3, c2, c1, \
+d8, d7, d6, d5, d4, d3, d2, d1, e8, e7, e6, e5, e4, e3, e2, e1, f8, f7, f6, f5, f4, f3, f2, f1, \
+g8, g7, g6, g5, g4, g3, g2, g1, h8, h7, h6, h5, h4, h3, h2, h1 = (0,0,square_size,square_size),(0,60,square_size,square_size),(0,120,square_size,square_size),(0,180,square_size,square_size), \
+(0,240,square_size,square_size),(0,300,square_size,square_size),(0,360,square_size,square_size),(0,420,square_size,square_size),(60,0,square_size,square_size),(60,60,square_size,square_size),(60,120,square_size,square_size),(60,180,square_size,square_size),(60,240,square_size,square_size),(60,300,square_size,square_size), \
+(60,360,square_size,square_size),(60,420,square_size,square_size),(120,0,square_size,square_size),(120,60,square_size,square_size),(120,120,square_size,square_size),(120,180,square_size,square_size),(120,240,square_size,square_size),(120,300,square_size,square_size),(120,360,square_size,square_size), \
+(120,420,square_size,square_size),(180,0,square_size,square_size),(180,60,square_size,square_size),(180,120,square_size,square_size),(180,180,square_size,square_size),(180,240,square_size,square_size),(180,300,square_size,square_size),(180,360,square_size,square_size),(180,420,square_size,square_size),(240,0,square_size,square_size), \
+(240,60,square_size,square_size),(240,120,square_size,square_size),(240,180,square_size,square_size),(240,240,square_size,square_size),(240,300,square_size,square_size),(240,360,square_size,square_size),(240,420,square_size,square_size),(300,0,square_size,square_size),(300,60,square_size,square_size),(300,120,square_size,square_size), \
+(300,180,square_size,square_size),(300,240,square_size,square_size),(300,300,square_size,square_size),(300,360,square_size,square_size),(300,420,square_size,square_size),(360,0,square_size,square_size),(360,60,square_size,square_size),(360,120,square_size,square_size),(360,180,square_size,square_size),(360,240,square_size,square_size), \
+(360,300,square_size,square_size),(360,360,square_size,square_size),(360,420,square_size,square_size),(420,0,square_size,square_size),(420,60,square_size,square_size),(420,120,square_size,square_size),(420,180,square_size,square_size),(420,240,square_size,square_size),(420,300,square_size,square_size),(420,360,square_size,square_size), \
+(420,420,square_size,square_size)
+
+squareMap = {'a8':(0,0,square_size,square_size),'a7':(0,60,square_size,square_size),'a6':(0,120,square_size,square_size),'a5':(0,180,square_size,square_size), \
+'a4':(0,240,square_size,square_size),'a3':(0,300,square_size,square_size),'a2':(0,360,square_size,square_size),'a1':(0,420,square_size,square_size),'b8':(60,0,square_size,square_size),'b7':(60,60,square_size,square_size),'b6':(60,120,square_size,square_size),'b5':(60,180,square_size,square_size),'b4':(60,240,square_size,square_size),'b3':(60,300,square_size,square_size), \
+'b2':(60,360,square_size,square_size),'b1':(60,420,square_size,square_size),'c8':(120,0,square_size,square_size),'c7':(120,60,square_size,square_size),'c6':(120,120,square_size,square_size),'c5':(120,180,square_size,square_size),'c4':(120,240,square_size,square_size),'c3':(120,300,square_size,square_size),'c2':(120,360,square_size,square_size), \
+'c1':(120,420,square_size,square_size),'d8':(180,0,square_size,square_size),'d7':(180,60,square_size,square_size),'d6':(180,120,square_size,square_size),'d5':(180,180,square_size,square_size),'d4':(180,240,square_size,square_size),'d3':(180,300,square_size,square_size),'d2':(180,360,square_size,square_size),'d1':(180,420,square_size,square_size),'e8':(240,0,square_size,square_size), \
+'e7':(240,60,square_size,square_size),'e6':(240,120,square_size,square_size),'e5':(240,180,square_size,square_size),'e4':(240,240,square_size,square_size),'e3':(240,300,square_size,square_size),'e2':(240,360,square_size,square_size),'e1':(240,420,square_size,square_size),'f8':(300,0,square_size,square_size),'f7':(300,60,square_size,square_size),'f6':(300,120,square_size,square_size), \
+'f5':(300,180,square_size,square_size),'f4':(300,240,square_size,square_size),'f3':(300,300,square_size,square_size),'f2':(300,360,square_size,square_size),'f1':(300,420,square_size,square_size),'g8':(360,0,square_size,square_size),'g7':(360,60,square_size,square_size),'g6':(360,120,square_size,square_size),'g5':(360,180,square_size,square_size),'g4':(360,240,square_size,square_size), \
+'g3':(360,300,square_size,square_size),'g2':(360,360,square_size,square_size),'g1':(360,420,square_size,square_size),'h8':(420,0,square_size,square_size),'h7':(420,60,square_size,square_size),'h6':(420,120,square_size,square_size),'h5':(420,180,square_size,square_size),'h4':(420,240,square_size,square_size),'h3':(420,300,square_size,square_size),'h2':(420,360,square_size,square_size), \
+'h1':(420,420,square_size,square_size)}
+
+#mapping of squares for flipped board
+reversemap = {"a1": "h8", "a2": "h7", "a3": "h6", "a4": "h5", "a5": "h4", "a6": "h3", "a7": "h2", "a8":"h1", "b1": "g8", "b2": "g7", "b3": "g6", "b4": "g5", "b5": "g4", "b6": "g3", "b7": "g2", "b8":"g1", "c1": "f8", "c2": "f7", "c3": "f6", "c4": "f5", "c5": "f4", "c6": "f3", "c7": "f2", "c8":"f1", "d1": "e8", "d2": "e7", "d3": "e6", "d4": "e5", "d5": "e4", "d6": "e3", "d7": "e2",\
+"d8":"e1", "e1": "d8", "e2": "d7", "e3": "d6", "e4": "d5", "e5": "d4", "e6": "d3", "e7": "d2", "e8":"d1", "f1": "c8", "f2": "c7", "f3": "c6", "f4": "c5", "f5": "c4", "f6": "c3", "f7": "c2", "f8":"c1", "g1": "b8", "g2": "b7", "g3": "b6", "g4": "b5", "g5": "b4", "g6": "b3", "g7": "b2", "g8":"b1", "h1": "a8", "h2": "a7", "h3": "a6", "h4": "a5", "h5": "a4", "h6": "a3", "h7": "a2", "h8":"a1"}
+
+squares = [a8, a7, a6, a5, a4, a3, a2, a1, b8, b7, b6, b5, b4, b3, b2, b1, c8, c7, c6, c5, c4, c3, c2, c1, \
+d8, d7, d6, d5, d4, d3, d2, d1, e8, e7, e6, e5, e4, e3, e2, e1, f8, f7, f6, f5, f4, f3, f2, f1, \
+g8, g7, g6, g5, g4, g3, g2, g1, h8, h7, h6, h5, h4, h3, h2, h1]
+
+c = 0
+other_dictionary = {}
+dictionary = {}
+for x in ['1','2','3','4','5','6','7','8']:
+	for y in ['a','b','c','d','e','f','g','h']:
+		dictionary[y+x] = c
+		other_dictionary[c] = y+x
+		c = c+1
+flip = False
+
+##### Piece-square tables #####
+Pieces = {'P': 100, 'N': 300, 'B': 300, 'R': 500, 'Q':900, 'K': 10000, 'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q':900, 'k': 10000}
+
+values = {}
+#pawn
+
+values['P']=[0,  0,  0,  0,  0,  0,  0,  0,
+	5, 10, 10, -20, -20, 10, 10, 5,
+	5, -5, -10, 0, 0, -10, -5, 5,
+ 	0,  0, 0, 20, 20, 0,  0,  0,
+ 	5,  5, 10, 25, 25, 10,  5,  5,
+ 	10, 10, 20, 30, 30, 20, 10, 10,
+	50, 50, 50, 70, 70, 50, 50, 50,
+	0,  0,  0,  0,  0,  0,  0,  0]
+
+ #knight
+values['N']= [-50,-40,-30,-30,-30,-30,-40,-50,
+	-40,-20,  0,  5,  5,  0,-20,-40,
+	-30,  5, 10, 15, 15, 10,  5,-30,
+	-30,  0, 15, 20, 20, 15,  0,-30,
+	-30,  5, 15, 20, 20, 15,  5,-30,
+	-30,  0, 10, 15, 15, 10,  0,-30,
+	-40,-20,  0,  0,  0,  0,-20,-40,
+	-50,-40,-30,-30,-30,-30,-40,-50]
+
+#bishop
+values['B']=[-20,-10,-10,-10,-10,-10,-10,-20,
+	-10,  5,  0,  0,  0,  0,  5,-10,
+	-10,  10, 10, 10, 10, 10, 10,-10,
+	-10,  0,  10, 10, 10, 10, 0,-10,
+	-10,  5,  5,  10, 10, 5,  5,-10,
+	-10,  0,  5,  10, 10, 5,  0,-10,
+	-10,  0,  0,  0,  0,  0,  0,-10,
+	-20,-10,-10, -10,-10,-10,-10,-20]
+
+#rook
+values['R']=[0,  0,  0,  0,  0,  0,  0,  0,
+	-5,  0,  0,  0,  0,  0,  0,  -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	5,  10, 10, 10, 10, 10, 10, -5,
+	0,  0,  0,  5,  5,  0,  0,  0]
+
+#queen
+values['Q']=[-20,-10,-10, -5, -5,-10,-10,-20,
+	-10,  0,  0,  0,  0,  0,  0,-10,
+	-10,  0,  5,  5,  5,  5,  0,-10,
+	0,  0,  5,  5,  5,  5,  0, -5,
+	-5,  0,  5,  5,  5,  5,  0, -5,
+	-10,  5,  5,  5,  5,  5,  0,-10,
+	-10,  0,  5,  0,  0,  0,  0,-10,
+	-20,-10,-10, -5, -5,-10,-10,-20]
+
+#king middle game
+values['K']=[20, 30, 10,  0,  0, 10, 30, 20,
+	20, 20,  0,  0,  0,  0, 20, 20,
+	-10,-20,-20,-20,-20,-20,-20,-10,
+	-20,-30,-30,-40,-40,-30,-30,-20,
+	-30,-40,-40,-50,-50,-40,-40,-30,
+	-30,-40,-40,-50,-50,-40,-40,-30,
+	-30,-40,-40,-50,-50,-40,-40,-30,
+	-30,-40,-40,-50,-50,-40,-40,-30]
+
+values['p']=[0,  0,  0,  0,  0,  0,  0,  0,
+	50, 50, 50, 70, 70, 50, 50, 50,
+	10, 10, 20, 30, 30, 20, 10, 10,
+ 	5,  5, 10, 25, 25, 10,  5,  5,
+ 	0,  0,  0, 20, 20,  0,  0,  0,
+ 	5, -5,-10,  0,  0,-10, -5,  5,
+	5, 10, 10,-20,-20, 10, 10,  5,
+	0,  0,  0,  0,  0,  0,  0,  0]
+
+ #knight
+values['n']= [-50,-40,-30,-30,-30,-30,-40,-50,
+	-40,-20,  0,  0,  0,  0,-20,-40,
+	-30,  0, 10, 15, 15, 10,  0,-30,
+	-30,  5, 15, 20, 20, 15,  5,-30,
+	-30,  0, 15, 20, 20, 15,  0,-30,
+	-30,  5, 10, 15, 15, 10,  5,-30,
+	-40,-20,  0,  5,  5,  0,-20,-40,
+	-50,-40,-30,-30,-30,-30,-40,-50]
+
+#bishop
+values['b']=[-20,-10,-10,-10,-10,-10,-10,-20,
+	-10,  0,  0,  0,  0,  0,  0,-10,
+	-10,  0,  5, 10, 10,  5,  0,-10,
+	-10,  5,  5, 10, 10,  5,  5,-10,
+	-10,  0, 10, 10, 10, 10,  0,-10,
+	-10, 10, 10, 10, 10, 10, 10,-10,
+	-10,  5,  0,  0,  0,  0,  5,-10,
+	-20,-10,-10,-10,-10,-10,-10,-20]
+#rook
+values['r']=[0,  0,  0,  0,  0,  0,  0,  0,
+	5, 10, 10, 10, 10, 10, 10,  5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	-5,  0,  0,  0,  0,  0,  0, -5,
+	0,  0,  0,  5,  5,  0,  0,  0]
+
+#queen
+values['q']=[-20,-10,-10, -5, -5,-10,-10,-20,
+	-10,  0,  0,  0,  0,  0,  0,-10,
+	-10,  0,  5,  5,  5,  5,  0,-10,
+	-5,  0,  5,  5,  5,  5,  0, -5,
+	0,  0,  5,  5,  5,  5,  0, -5,
+	-10,  5,  5,  5,  5,  5,  0,-10,
+	-10,  0,  5,  0,  0,  0,  0,-10,
+	-20,-10,-10, -5, -5,-10,-10,-20]
+
+#king
+values['k']=[-30,-40,-40,-50,-50,-40,-40,-30,
+	-30,-40,-40,-50,-50,-40,-40,-30,
+	-30,-40,-40,-50,-50,-40,-40,-30,
+	-30,-40,-40,-50,-50,-40,-40,-30,
+	-20,-30,-30,-40,-40,-30,-30,-20,
+	-10,-20,-20,-20,-20,-20,-20,-10,
+	20, 20,  0,  0,  0,  0, 20, 20,
+	20, 30, 10,  0,  0, 10, 30, 20]
+
+#draws the board
+def drawBoard(board):
+	global flip
+	global pieces
+
+	square_size = 60
+	width, height = 8*square_size, 8*square_size
+	colors = itertools.cycle([(245,245,220), (128,0,0)])
+
+	for x in range(0, width, square_size):
+		for y in range(0, height, square_size):
+			rect = (x, y, square_size, square_size)
+			pygame.draw.rect(chessboard, next(colors), rect)
+			tiles.append(rect)
+		next(colors)
+
+	for square in chess.SQUARES:
+		piece = board.piece_at(square)
+		if flip:
+			square = 63-square
+		myx = (square % 8) * square_size
+		myy = (7 - square//8) * square_size
+		if piece != None and piece.symbol() == 'P':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(white_pawns, (point))
+		if piece != None and piece.symbol() == 'R':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(white_rooks, (point))
+		if piece != None and piece.symbol() == 'N':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(white_knights, (point))
+		if piece != None and piece.symbol() == 'B':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(white_bishops, (point))
+		if piece != None and piece.symbol() == 'Q':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(white_queen, (point))
+		if piece != None and piece.symbol() == 'K':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(white_king, (point))
+		if piece != None and piece.symbol() == 'p':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(black_pawns, (point))
+		if piece != None and piece.symbol() == 'r':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(black_rooks, (point))
+		if piece != None and piece.symbol() == 'n':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(black_knights, (point))
+		if piece != None and piece.symbol() == 'b':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(black_bishops, (point))
+		if piece != None and piece.symbol() == 'q':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(black_queen, (point))
+		if piece != None and piece.symbol() == 'k':
+			point = (myx, myy, square_size, square_size)
+			chessboard.blit(black_king, (point))
+
+	#main_surface.fill((54,69,79))
+	game_rect = ((900, 100), (80, 30))
+	flip_rect = ((900, 160), (80,30))
+	undo_rect = ((900, 220), (80,30))
+	new_game = font.render("New game", True, black)
+	flip_board = font.render("Flip board", True, black)
+	undo_move = font.render("Undo move", True, black)
+	pygame.draw.rect(main_surface, (surface_color), (game_rect))
+	pygame.draw.rect(main_surface, (surface_color), (flip_rect))
+	pygame.draw.rect(main_surface, (surface_color), (undo_rect))
+	main_surface.blit(new_game, (900,100))
+	main_surface.blit(flip_board, (900, 160))
+	main_surface.blit(undo_move, (900, 220))
+	main_surface.blit(moves_made, (625, 100))
+	main_surface.blit(chessboard, (100, 100))
+	pygame.display.update()
+
+#finds opening moves
+def read_move_list():
+	global move_list
+	move_list = []
+	with chess.polyglot.open_reader("performance.bin") as reader:
+		for move in reader.find_all(board):
+			move_list.append(move)	
+
+#chooses move based on probabilities
+def choose_move_open():
+	global move_list
+	sum_ = 0
+	probability_list = []
+	move_list = []
+
+	with chess.polyglot.open_reader("performance.bin") as reader:
+		for move in reader.find_all(board):
+			sum_ += move.weight
+			move_list.append(move)
+		total = 0.0
+		for move in reader.find_all(board):
+			probability = move.weight/sum_
+			total = total + probability
+			probability_list.append(total)
+		for value in probability_list:
+			print(value)
+		choice = random.random()
+		for i in range(0, len(move_list)):
+			if choice < probability_list[i]:
+				board.push(move_list[i].move())
+				print(move_list[i].move())
+
+# evaluates board position
+def score_board(board):
+	cmap = board.piece_map()
+	score = 0
+	piece_scores = {'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q':0, 'K': 0, 'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q':0, 'k': 0}
+	for piece in Pieces:
+		for square in chess.SQUARES:
+			if square in cmap:
+				#print (cmap[square].symbol())
+				if cmap[square].symbol() == piece:
+					score += values[piece][square]
+					score += Pieces[piece]
+					piece_scores[piece] += Pieces[piece] + values[piece][square]
+				else:
+					pass
+	material_score = (piece_scores['K'] - piece_scores['k']
+	+ piece_scores['Q'] - piece_scores['q']
+	+ piece_scores['R'] - piece_scores['r']
+	+ piece_scores['B'] + piece_scores['N'] - piece_scores['b'] - piece_scores['n']
+	+ piece_scores['P'] - piece_scores['p']) 
+	return material_score
+
+def play_game():
+	global flip
+	choosing = True
+	while choosing:
+		words = pygame.font.SysFont("Comic Sans MS", 100, italic = True)
+		white_rect = ((0, 30), (500,700))
+		black_rect = ((500,30), (500,700))
+		white_move = words.render("White", True, black)
+		black_move = words.render("Black", True, white)
+		text = font.render("Choose your color", True, white)
+		pygame.draw.rect(main_surface, (white), (white_rect))
+		pygame.draw.rect(main_surface, (black), (black_rect))
+		main_surface.blit(white_move, (100,260))
+		main_surface.blit(black_move, (600,260))
+		main_surface.blit(text, (450,0))
+
+		chosen = False
+		pygame.display.update()
+
+		gameOver = True
+
+		while not chosen:
+			ev2 = pygame.event.poll()
+			if ev2.type == pygame.MOUSEBUTTONDOWN:
+				x,y = pygame.mouse.get_pos()
+				if 0 <= x <= 500: #white
+					board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+					drawBoard(board)
+					chosen = True 
+					turn = 0
+					#choosing = False
+				elif 500 < x <= 1000: #black
+					board = chess.Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+					flip = not flip
+					drawBoard(board)
+					chosen = True
+					turn = 1
+					choosing = False
+	#main_surface.fill((54,69,79))
+	#pygame.display.update()
+
+#uses move tree to search for best move
+def minimax_root(position, depth):
+	global turn
+	global material_score
+	if depth == 0 or board.is_checkmate():
+		return score_board(board), current_move
+	else:
+		if (depth % 2 == 0): #White's turn
+			best_score = 999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				material_score, testmove = minimax(new_pos, depth - 1, move)
+				board.pop()
+				if (material_score < best_score):  #white minimizes score
+					best_score = material_score
+					best_move = testmove
+			return(best_score, best_move)
+		else:
+			best_score = -999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				#print(board)
+				material_score, testmove = minimax(new_pos, depth - 1, move)
+				#print("%s is the material score" %material_score)
+				#print("%s move" %move)
+				board.pop()
+				if (material_score > best_score):  #black maximizes score
+					best_score = material_score
+					best_move = testmove
+					#print (best_move)
+			#print(best_move)
+			#print("here")
+			return(best_score, best_move)
+
+
+### Minimax search algorithm ###
+
+def minimax(position, depth, current_move):
+	global turn
+	global material_score
+	if depth == 0 or board.is_checkmate():
+		return score_board(board), current_move
+	else:
+		if (depth % 2 == 0): #White's turn
+			best_score = 999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				material_score, testmove = minimax(new_pos, depth - 1, current_move)
+				board.pop()
+				if (material_score < best_score):  #white minimizes score
+					best_score = material_score
+					best_move = testmove
+			return(best_score, best_move)
+		else:
+			best_score = -999999
+			best_move = None
+			for move in board.legal_moves:
+				new_pos = board.push(move)
+				#print(board)
+				material_score, testmove = minimax(new_pos, depth - 1, current_move)
+				#print("%s is the material score" %material_score)
+				#print("%s move" %move)
+				board.pop()
+				if (material_score > best_score):  #black maximizes score
+					best_score = material_score
+					best_move = testmove
+					#print (best_move)
+			#print(best_move)
+			#print("here")
+			return(best_score, best_move)
+
+exit = False
+while not exit:
+	read_move_list()
+	gameOver = False
+	turn = 0
+	while not gameOver:
+		ev = pygame.event.poll()
+		if ev.type == pygame.QUIT: 
+			exit = True 
+		
+		drawBoard(board)
+		material_score = score_board(board)
+		
+		if board.is_checkmate() or board.is_stalemate():
+			if board.is_checkmate():
+				game_over_checkmate = font.render("Checkmate! Press new game to play again.", True, black)
+				main_surface.blit(game_over_checkmate, (100,800))
+				#pygame.display.flip()
+			if board.is_stalemate():
+				game_over_stalemate = font.render("Stalemate! Press new game to play again.", True, black)
+				main_surface.blit(game_over_stalemate, (100,800))
+				#pygame.display.flip()
+			gameOver = True
+		if turn % 2 == 0 and len(move_list) > 0:
+			if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and not clicked:
+				x,y = pygame.mouse.get_pos()
+				if 900<= x <=980 and 100 <= y <= 130:
+					play_game()
+				elif 900<= x <=980 and 160 <= y <= 190:
+					flip = not flip
+					drawBoard(board)
+				elif 900<= x <=980 and 220 <= y <= 250:
+					board.pop()
+					board.pop()
+					drawBoard(board)
+				else:
+					for square in squares:
+						clear = (0,0,0)
+						square = pygame.draw.rect(chessboard,clear,square)
+						square_x, square_y = square[0], square[1]
+						if flip:
+							pass
+						if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
+							for k,v in squareMap.items():
+								if square == v:
+									if not flip:
+										if board.piece_at(dictionary[k]) != None:
+											colorMe = True
+											key = k
+											val = v	
+											piece_from = k
+											clicked = True
+									else:
+										if board.piece_at(dictionary[k]) != None:
+											colorMe = True
+											key = reversemap[k]
+											val = v	
+											piece_from = reversemap[k]
+											clicked = True
+
+
+
+			elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and clicked:
+				for square in squares:
+					x,y = pygame.mouse.get_pos()
+					square_x, square_y = square[0], square[1]
+					if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
+						for k,v in squareMap.items():
+							if square == v:
+								if not flip:
+									piece_to = k
+									clicked = False
+									board_move = chess.Move.from_uci(piece_from + piece_to)
+									if board_move in board.legal_moves:
+										board.push(board_move)
+										#drawBoard(board)
+										colorMe = False
+										turn += 1
+
+								else:
+									piece_to = reversemap[k]
+									clicked = False
+									board_move = chess.Move.from_uci(piece_from + piece_to)
+									if board_move in board.legal_moves:
+										board.push(board_move)
+										#drawBoard(board)
+										colorMe = False
+										turn += 1
+
+		elif not turn % 2 ==0 and len(move_list) > 0:
+			read_move_list()
+			choose_move_open()
+			#drawBoard(board)
+			turn += 1
+		elif turn % 2 == 0 and len(move_list) == 0:
+			print (material_score/100)
+			score, move = minimax_root(board, 2)	
+			board.push(move)
+			#drawBoard(board)
+			turn += 1
+		elif not turn % 2 == 0 and len(move_list) == 0:
+			if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and not clicked:
+				x,y = pygame.mouse.get_pos()
+				if 900<= x <=980 and 100 <= y <= 130:
+					play_game()
+				elif 900<= x <=980 and 160 <= y <= 190:
+					flip = not flip
+					drawBoard(board)
+				elif 900<= x <=980 and 220 <= y <= 250:
+					board.pop()
+					board.pop()
+					turn = turn - 2
+					drawBoard(board)
+				else:
+					for square in squares:
+						clear = (0,0,0)
+						square = pygame.draw.rect(chessboard,clear,square)
+						square_x, square_y = square[0], square[1]
+						if flip:
+							pass
+						if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
+							for k,v in squareMap.items():
+								if square == v:
+									if not flip:
+										if board.piece_at(dictionary[k]) != None:
+											colorMe = True
+											key = k
+											val = v	
+											piece_from = k
+											clicked = True
+									else:
+										if board.piece_at(dictionary[k]) != None:
+											colorMe = True
+											key = reversemap[k]
+											val = v	
+											piece_from = reversemap[k]
+											clicked = True
+
+
+
+			elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and clicked:
+				for square in squares:
+					x,y = pygame.mouse.get_pos()
+					square_x, square_y = square[0], square[1]
+					if square_x < x-100 < (square_x+square_size) and square_y < y-100 < (square_y+square_size):
+						for k,v in squareMap.items():
+							if square == v:
+								if not flip:
+									piece_to = k
+									clicked = False
+									board_move = chess.Move.from_uci(piece_from + piece_to)
+									if board_move in board.legal_moves:
+										board.push(board_move)
+										#drawBoard(board)
+										colorMe = False
+										turn += 1
+								else:
+									piece_to = reversemap[k]
+									clicked = False
+									board_move = chess.Move.from_uci(piece_from + piece_to)
+									if board_move in board.legal_moves:
+										board.push(board_move)
+										#drawBoard(board)
+										colorMe = False
+										turn += 1
+		
+		material_score = 0
+
+		main_surface.fill((54,69,79))
+		main_surface.blit(chessboard, (100, 100))
+
+		clock.tick(30)
+		drawBoard(board)
+		#pygame.display.flip()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
